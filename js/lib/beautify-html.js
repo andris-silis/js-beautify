@@ -47,6 +47,7 @@
             put braces on the same line as control statements (default), or put braces on own line (Allman / ANSI style), or just put end braces on own line.
     unformatted (defaults to inline tags) - list of tags, that shouldn't be reformatted
     indent_scripts (default normal)  - "keep"|"separate"|"normal"
+    clean_attributes (default false) — clean ids and classes
 
     e.g.
 
@@ -55,7 +56,8 @@
       'indent_char': ' ',
       'max_char': 78,
       'brace_style': 'expand',
-      'unformatted': ['a', 'sub', 'sup', 'b', 'i', 'u']
+      'unformatted': ['a', 'sub', 'sup', 'b', 'i', 'u'],
+      'clean_attributes': true
     });
 */
 
@@ -77,6 +79,7 @@
       brace_style = options.brace_style || 'collapse';
       max_char = options.max_char === 0 ? Infinity : options.max_char || 250;
       unformatted = options.unformatted || ['a', 'span', 'bdo', 'em', 'strong', 'dfn', 'code', 'samp', 'kbd', 'var', 'cite', 'abbr', 'acronym', 'q', 'sub', 'sup', 'tt', 'i', 'b', 'big', 'small', 'u', 's', 'strike', 'font', 'ins', 'del', 'pre', 'address', 'dt', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+      clean_attributes = options.clean_attributes || false;
 
       function Parser() {
 
@@ -232,7 +235,25 @@
 
             if (input_char === "'" || input_char === '"') {
               if (!content[1] || content[1] !== '!') { //if we're in a comment strings don't get treated specially
-                input_char += this.get_unformatted(input_char);
+                var attrStr = content.join('');
+                var unformatted_char = this.get_unformatted(input_char);
+
+                if (clean_attributes) {
+                  var regex = /(\w+)\=$/i;
+                  if (regex.test(attrStr)) {
+                    var matches = attrStr.match(regex)[1];
+                    if (!!matches) {
+                      if (matches === 'class' || matches === 'id') {
+                        unformatted_char = unformatted_char.replace(/ +/g, " ");
+                        unformatted_char = unformatted_char.replace(/^ /, "");
+                        unformatted_char = unformatted_char.replace(/ "$/, "\"");
+                      }
+                    }
+                  }
+                }
+
+                input_char += unformatted_char;
+                input_char = input_char.trim();
                 space = true;
               }
             }
