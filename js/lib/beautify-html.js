@@ -253,7 +253,6 @@
                 }
 
                 input_char += unformatted_char;
-                input_char = input_char.trim();
                 space = true;
               }
             }
